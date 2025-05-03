@@ -59,15 +59,25 @@ public class FoodService : IFoodService
         var food = await _context.Foods.FindAsync(id);
         if (food == null) return Result<FoodModel>.Failure("Food not found");
 
-        food.Name = request.Name!;
-        food.Description = request.Description!;
-        food.PhotoUrl = request.PhotoUrl!;
-        food.Price = request.Price!.Value;
-        food.PreparationTime = request.PreparationTime!.Value;
-        food.Recipe = request.Recipe!;
+        if (request.Name is not null)
+            food.Name = request.Name;
+
+        if (request.Description is not null)
+            food.Description = request.Description;
+
+        if (request.PhotoUrl is not null)
+            food.PhotoUrl = request.PhotoUrl;
+
+        if (request.Price.HasValue)
+            food.Price = request.Price.Value;
+
+        if (request.PreparationTime.HasValue)
+            food.PreparationTime = request.PreparationTime.Value;
+
+        if (request.Recipe is not null)
+            food.Recipe = request.Recipe;
 
         await _context.SaveChangesAsync();
-
         return Result<FoodModel>.Success(MapToFoodModel(food));
     }
 

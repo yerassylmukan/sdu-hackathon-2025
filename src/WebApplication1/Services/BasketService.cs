@@ -32,37 +32,64 @@ public class BasketService : IBasketService
 
         return Result<BasketModel>.Success(MapToBasketModel(basket));
     }
-
+    
     public async Task<Result<BasketModel>> AddItemToBasketAsync(string userId, RequestBasketItemModel request)
     {
         var food = await _context.Foods.FindAsync(request.FoodId);
-        if (food == null) return Result<BasketModel>.Failure("Food not found");
+        if (food == null)
+            return Result<BasketModel>.Failure("Food not found");
 
-        var basket = await _context.Baskets
+        var trackedBasket = await _context.Baskets
             .Include(b => b.Items)
             .FirstOrDefaultAsync(b => b.UserId == userId);
 
-        if (basket == null)
+        if (trackedBasket == null)
         {
-            basket = new Basket { Id = Guid.NewGuid(), UserId = userId };
-            _context.Baskets.Add(basket);
-        }
-
-        var existingItem = basket.Items.FirstOrDefault(i => i.FoodId == request.FoodId);
-        if (existingItem != null)
-            existingItem.Quantity += request.Quantity;
-        else
-            basket.Items.Add(new BasketItem
+            trackedBasket = new Basket
             {
                 Id = Guid.NewGuid(),
+                UserId = userId,
+                Items = new List<BasketItem>()
+            };
+            _context.Baskets.Add(trackedBasket);
+        }
+        else
+        {
+            foreach (var item in trackedBasket.Items)
+            {
+                _context.Entry(item).State = EntityState.Detached;
+            }
+
+            trackedBasket.Items = await _context.BasketItems
+                .Where(i => i.BasketId == trackedBasket.Id)
+                .ToListAsync();
+        }
+
+        var existingItem = trackedBasket.Items.FirstOrDefault(i => i.FoodId == request.FoodId);
+        if (existingItem != null)
+        {
+            existingItem.Quantity += request.Quantity;
+            _context.BasketItems.Update(existingItem);
+        }
+        else
+        {
+            var newItem = new BasketItem
+            {
+                Id = Guid.NewGuid(),
+                BasketId = trackedBasket.Id,
                 FoodId = request.FoodId,
                 Quantity = request.Quantity
-            });
+            };
+            trackedBasket.Items.Add(newItem);
+            _context.BasketItems.Add(newItem);
+        }
 
         await _context.SaveChangesAsync();
 
-        return Result<BasketModel>.Success(MapToBasketModel(basket));
+        return Result<BasketModel>.Success(MapToBasketModel(trackedBasket));
     }
+
+
 
     public async Task<Result> RemoveItemFromBasketAsync(Guid basketItemId)
     {
@@ -85,6 +112,8 @@ public class BasketService : IBasketService
 
         _context.BasketItems.RemoveRange(basket.Items);
         await _context.SaveChangesAsync();
+
+        basket.Items.Clear();
 
         return Result.Success();
     }

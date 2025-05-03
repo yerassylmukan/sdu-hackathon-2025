@@ -98,7 +98,7 @@ var userManager = scopedProvider.GetRequiredService<UserManager<ApplicationUser>
 var roleManager = scopedProvider.GetRequiredService<RoleManager<IdentityRole>>();
 await AppIdentityDbContextSeed.SeedAsync(identityDbContext, userManager, roleManager);
 var applicationDbContext = scopedProvider.GetRequiredService<ApplicationDbContext>();
-ApplicationDbContextSeed.SeedData(applicationDbContext);
+await ApplicationDbContextSeed.SeedDataAsync(applicationDbContext);
 
 app.UseRouting();
 
