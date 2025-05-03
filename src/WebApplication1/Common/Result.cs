@@ -2,30 +2,35 @@
 
 public class Result
 {
-    public bool IsSuccess { get; }
-    public string? Error { get; }
-
-    public bool IsFailure => !IsSuccess;
-
     protected Result(bool isSuccess, string? error)
     {
-        if (isSuccess && error != null) 
+        if (isSuccess && error != null)
             throw new InvalidOperationException();
-        if (!isSuccess && string.IsNullOrWhiteSpace(error)) 
+        if (!isSuccess && string.IsNullOrWhiteSpace(error))
             throw new InvalidOperationException();
 
         IsSuccess = isSuccess;
         Error = error;
     }
 
-    public static Result Success() => new(true, null);
-    public static Result Failure(string error) => new(false, error);
+    public bool IsSuccess { get; }
+    public string? Error { get; }
+
+    public bool IsFailure => !IsSuccess;
+
+    public static Result Success()
+    {
+        return new Result(true, null);
+    }
+
+    public static Result Failure(string error)
+    {
+        return new Result(false, error);
+    }
 }
 
 public class Result<T> : Result
 {
-    public T? Value { get; }
-
     protected internal Result(T value) : base(true, null)
     {
         Value = value;
@@ -36,6 +41,15 @@ public class Result<T> : Result
         Value = default;
     }
 
-    public static Result<T> Success(T value) => new(value);
-    public new static Result<T> Failure(string error) => new(error);
+    public T? Value { get; }
+
+    public static Result<T> Success(T value)
+    {
+        return new Result<T>(value);
+    }
+
+    public new static Result<T> Failure(string error)
+    {
+        return new Result<T>(error);
+    }
 }

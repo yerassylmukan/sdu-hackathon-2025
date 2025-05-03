@@ -11,20 +11,13 @@ public class AppIdentityDbContextSeed
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager)
     {
-        if (identityDbContext.Database.IsNpgsql())
-        {
-            identityDbContext.Database.Migrate();
-        }
+        if (identityDbContext.Database.IsNpgsql()) identityDbContext.Database.Migrate();
 
-        string[] roles = new[] { "Admin", "User" };
+        var roles = new[] { "Admin", "User" };
 
         foreach (var role in roles)
-        {
             if (!await roleManager.RoleExistsAsync(role))
-            {
                 await roleManager.CreateAsync(new IdentityRole(role));
-            }
-        }
 
         var defaultUserEmail = "user@gmail.com";
         if (await userManager.FindByEmailAsync(defaultUserEmail) is null)

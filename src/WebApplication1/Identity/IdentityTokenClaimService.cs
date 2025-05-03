@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using WebApplication1.Common;
 using WebApplication1.Common.Interfaces;
+
 namespace WebApplication1.Identity;
 
 public class IdentityTokenClaimService : ITokenClaimService
@@ -23,18 +24,16 @@ public class IdentityTokenClaimService : ITokenClaimService
         var user = await _userManager.FindByNameAsync(userName);
         if (user == null) return Result<string>.Failure("User not found");
         var roles = await _userManager.GetRolesAsync(user);
-        var claims = new List<Claim> { new Claim(ClaimTypes.Name, userName) };
+        var claims = new List<Claim> { new(ClaimTypes.Name, userName) };
 
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
+        foreach (var role in roles) claims.Add(new Claim(ClaimTypes.Role, role));
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims.ToArray()),
             Expires = DateTime.UtcNow.AddDays(7),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            SigningCredentials =
+                new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return Result<string>.Success(tokenHandler.WriteToken(token));

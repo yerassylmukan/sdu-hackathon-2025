@@ -20,36 +20,24 @@ public class AuthController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<string>> Register([FromBody] UserModel userModel)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-        
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
         var result = await _authService.RegisterAsync(userModel.UserName, userModel.Password);
-        
-        if (result.IsFailure)
-        {
-            return BadRequest(result.Error);
-        }
-        
+
+        if (result.IsFailure) return BadRequest(result.Error);
+
         return Ok(result.Value);
     }
 
     [HttpPost]
     public async Task<ActionResult<string>> Login([FromBody] UserModel userModel)
     {
-        if (!ModelState.IsValid)
-        {   
-            return BadRequest(ModelState);
-        }
+        if (!ModelState.IsValid) return BadRequest(ModelState);
 
         var result = await _authService.LoginAsync(userModel.UserName, userModel.Password);
 
-        if (result.IsFailure)
-        {
-            return BadRequest(result.Error);
-        }
-        
+        if (result.IsFailure) return BadRequest(result.Error);
+
         return Ok(result.Value);
     }
 
@@ -58,11 +46,8 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<bool>> GiveAdminRole([FromBody] RoleRequest request)
     {
         var result = await _authService.GiveAdminRoleAsync(request.UserName);
-        if (result.IsFailure)
-        {
-            return BadRequest(result.Error);
-        }
-    
+        if (result.IsFailure) return BadRequest(result.Error);
+
         return Ok(result.Value);
     }
 }

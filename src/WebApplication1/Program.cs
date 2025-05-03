@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -9,6 +8,8 @@ using Microsoft.OpenApi.Models;
 using WebApplication1;
 using WebApplication1.Common;
 using WebApplication1.Common.Interfaces;
+using WebApplication1.Data;
+using WebApplication1.Hubs;
 using WebApplication1.Identity;
 using WebApplication1.Services;
 using WebApplication1.Validators;
@@ -17,6 +18,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<ITokenClaimService, IdentityTokenClaimService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IFoodService, FoodService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IBasketService, BasketService>();
+
+builder.Services.AddSignalR();
 
 builder.Services.AddControllers()
     .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<UserModelValidator>());
@@ -24,11 +31,11 @@ builder.Services.AddControllers()
 builder.Services.AddDbContext<AppIdentityDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("IdentityConnection")));
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 var key = Encoding.ASCII.GetBytes(AuthorizationConstants.JWT_SECRET_KEY);
-builder.Services.AddAuthentication(config =>
-    {
-        config.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
+builder.Services.AddAuthentication(config => { config.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; })
     .AddJwtBearer(config =>
     {
         config.RequireHttpsMetadata = false;
@@ -63,7 +70,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
@@ -75,8 +82,7 @@ builder.Services.AddSwaggerGen(c =>
                 },
                 Scheme = "oauth2",
                 Name = "Bearer",
-                In = ParameterLocation.Header,
-
+                In = ParameterLocation.Header
             },
             new List<string>()
         }
@@ -87,12 +93,16 @@ var app = builder.Build();
 
 using var scope = app.Services.CreateScope();
 var scopedProvider = scope.ServiceProvider;
-var context = scopedProvider.GetRequiredService<AppIdentityDbContext>();
+var identityDbContext = scopedProvider.GetRequiredService<AppIdentityDbContext>();
 var userManager = scopedProvider.GetRequiredService<UserManager<ApplicationUser>>();
 var roleManager = scopedProvider.GetRequiredService<RoleManager<IdentityRole>>();
-await AppIdentityDbContextSeed.SeedAsync(context, userManager, roleManager);
+await AppIdentityDbContextSeed.SeedAsync(identityDbContext, userManager, roleManager);
+var applicationDbContext = scopedProvider.GetRequiredService<ApplicationDbContext>();
+ApplicationDbContextSeed.SeedData(applicationDbContext);
 
 app.UseRouting();
+
+app.MapHub<OrderStatusHub>("/hubs/orderStatus");
 
 app.UseAuthentication();
 
@@ -100,10 +110,7 @@ app.UseAuthorization();
 
 app.UseSwagger();
 
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-});
+app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1"); });
 
 app.MapControllers();
 

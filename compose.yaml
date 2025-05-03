@@ -9,6 +9,9 @@
       - ASPNETCORE_URLS=http://+:80
     ports:
       - "5000:80"
+    depends_on:
+      - identity
+      - db
     
   identity:
     image: postgres:latest
@@ -19,3 +22,13 @@
       - POSTGRES_DB=identityDatabase
     ports:
       - "5432:5432"
+
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=appDatabase
+    ports:
+      - "5433:5432"
