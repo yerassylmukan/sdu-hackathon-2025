@@ -32,7 +32,7 @@ public class BasketService : IBasketService
 
         return Result<BasketModel>.Success(MapToBasketModel(basket));
     }
-    
+
     public async Task<Result<BasketModel>> AddItemToBasketAsync(string userId, RequestBasketItemModel request)
     {
         var food = await _context.Foods.FindAsync(request.FoodId);
@@ -55,10 +55,7 @@ public class BasketService : IBasketService
         }
         else
         {
-            foreach (var item in trackedBasket.Items)
-            {
-                _context.Entry(item).State = EntityState.Detached;
-            }
+            foreach (var item in trackedBasket.Items) _context.Entry(item).State = EntityState.Detached;
 
             trackedBasket.Items = await _context.BasketItems
                 .Where(i => i.BasketId == trackedBasket.Id)
@@ -88,7 +85,6 @@ public class BasketService : IBasketService
 
         return Result<BasketModel>.Success(MapToBasketModel(trackedBasket));
     }
-
 
 
     public async Task<Result> RemoveItemFromBasketAsync(Guid basketItemId)

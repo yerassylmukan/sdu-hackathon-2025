@@ -72,7 +72,7 @@ public class OrderController : ControllerBase
 
         return Ok();
     }
-    
+
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<OrderModel>>> GetOrders()

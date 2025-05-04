@@ -91,7 +91,6 @@ public class OrderService : IOrderService
             .ToListAsync();
 
         return Result<IEnumerable<OrderModel>>.Success(orders.Select(MapToOrderModel));
-
     }
 
     private OrderModel MapToOrderModel(Order order)
