@@ -678,7 +678,6 @@
     </header>
 
     <main class="container">
-        <!-- Login Page -->
         <div class="page" id="login-page">
             <div class="auth-container">
                 <h2 class="auth-title">Login</h2>
@@ -699,7 +698,6 @@
             </div>
         </div>
 
-        <!-- Register Page -->
         <div class="page" id="register-page">
             <div class="auth-container">
                 <h2 class="auth-title">Register</h2>
@@ -724,41 +722,32 @@
             </div>
         </div>
 
-        <!-- Menu Page -->
         <div class="page active" id="menu-page">
             <h2>Food Menu</h2>
             <div class="categories" id="categories-container">
                 <button class="category-btn active" data-category-id="all">All</button>
-                <!-- Categories will be populated dynamically -->
             </div>
             <div class="foods-grid" id="foods-container">
-                <!-- Foods will be populated dynamically -->
             </div>
         </div>
 
-        <!-- Food Detail Page -->
         <div class="page" id="food-detail-page">
             <a href="#" class="back-btn" id="back-to-menu">
                 <i class="fas fa-arrow-left"></i> Back to Menu
             </a>
             <div class="food-detail" id="food-detail-container">
-                <!-- Food details will be populated dynamically -->
             </div>
         </div>
 
-        <!-- Basket Page -->
         <div class="page" id="basket-page">
             <h2>Your Basket</h2>
             <div id="basket-content">
-                <!-- Basket will be populated dynamically -->
             </div>
         </div>
 
-        <!-- Orders Page -->
         <div class="page" id="orders-page">
             <h2>Your Orders</h2>
             <div class="orders-list" id="orders-container">
-                <!-- Orders will be populated dynamically -->
             </div>
         </div>
     </main>
@@ -785,99 +774,248 @@
         const API_BASE = "http://localhost:5000/api";
         
         async function register(userName, password) {
-            const response = await fetch(`${API_BASE}/Auth/Register`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userName, password })
-            });
-            return response.json();
+            try {
+                const response = await fetch(`${API_BASE}/Auth/Register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userName, password })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(errorData || 'Registration failed');
+                }
+                
+                const token = await response.text();
+                return { success: true, token };
+            } catch (error) {
+                console.error('Register error:', error);
+                return { success: false, message: error.message };
+            }
         }
-        
+
         async function login(userName, password) {
-            const response = await fetch(`${API_BASE}/Auth/Login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userName, password })
-            });
-            return response.json();
+            try {
+                const response = await fetch(`${API_BASE}/Auth/Login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userName, password })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(errorData || 'Login failed');
+                }
+                
+                const token = await response.text();
+                return { success: true, token };
+            } catch (error) {
+                console.error('Login error:', error);
+                return { success: false, message: error.message };
+            }
         }
         
-        async function getUserBasket(token) {
-            const response = await fetch(`${API_BASE}/Basket/GetUserBasket`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            return response.json();
+        // Basket functions
+async function getUserBasket(token) {
+    try {
+        const response = await fetch(`${API_BASE}/Basket/GetUserBasket`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to get basket');
         }
         
-        async function addItemToBasket(token, foodId, quantity) {
-            const response = await fetch(`${API_BASE}/Basket/AddItemToBasket`, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ foodId, quantity })
-            });
-            return response.json();
+        return await response.json();
+    } catch (error) {
+        console.error('Get basket error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+async function addItemToBasket(token, foodId, quantity) {
+    try {
+        const response = await fetch(`${API_BASE}/Basket/AddItemToBasket`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ foodId, quantity })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to add item to basket');
         }
         
-        async function removeItemFromBasket(token, basketItemId) {
-            const response = await fetch(`${API_BASE}/Basket/RemoveItemFromBasket/${basketItemId}`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            return response.ok;
+        return await response.json();
+    } catch (error) {
+        console.error('Add to basket error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+async function removeItemFromBasket(token, basketItemId) {
+    try {
+        const response = await fetch(`${API_BASE}/Basket/RemoveItemFromBasket/${basketItemId}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to remove item from basket');
         }
         
-        async function clearUserBasket(token) {
-            const response = await fetch(`${API_BASE}/Basket/ClearUserBasket`, {
-                method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            return response.ok;
+        return { success: true };
+    } catch (error) {
+        console.error('Remove basket item error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+async function clearUserBasket(token) {
+    try {
+        const response = await fetch(`${API_BASE}/Basket/ClearUserBasket`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to clear basket');
         }
         
-        async function getAllCategories() {
-            const response = await fetch(`${API_BASE}/Category/GetAllCategories`);
-            return response.json();
+        return { success: true };
+    } catch (error) {
+        console.error('Clear basket error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+// Category functions
+async function getAllCategories() {
+    try {
+        const response = await fetch(`${API_BASE}/Category/GetAllCategories`);
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to get categories');
         }
         
-        async function getCategoryById(id) {
-            const response = await fetch(`${API_BASE}/Category/GetCategoryById/${id}`);
-            return response.json();
+        return await response.json();
+    } catch (error) {
+        console.error('Get categories error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+async function getCategoryById(id) {
+    try {
+        const response = await fetch(`${API_BASE}/Category/GetCategoryById/${id}`);
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to get category');
         }
         
-        async function getAllFoods() {
-            const response = await fetch(`${API_BASE}/Food/GetAllFoods`);
-            return response.json();
+        return await response.json();
+    } catch (error) {
+        console.error('Get category error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+// Food functions
+async function getAllFoods() {
+    try {
+        const response = await fetch(`${API_BASE}/Food/GetAllFoods`);
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to get foods');
         }
         
-        async function getFoodById(id) {
-            const response = await fetch(`${API_BASE}/Food/GetFoodById/${id}`);
-            return response.json();
+        return await response.json();
+    } catch (error) {
+        console.error('Get foods error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+async function getFoodById(id) {
+    try {
+        const response = await fetch(`${API_BASE}/Food/GetFoodById/${id}`);
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to get food item');
         }
         
-        async function placeOrderFromBasket(token) {
-            const response = await fetch(`${API_BASE}/Order/PlaceOrderFromBasket`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            return response.json();
+        return await response.json();
+    } catch (error) {
+        console.error('Get food error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+// Order functions
+async function placeOrderFromBasket(token) {
+    try {
+        const response = await fetch(`${API_BASE}/Order/PlaceOrderFromBasket`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to place order');
         }
         
-        async function getMyOrders(token) {
-            const response = await fetch(`${API_BASE}/Order/GetMyOrders`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            return response.json();
+        return await response.json();
+    } catch (error) {
+        console.error('Place order error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+async function getMyOrders(token) {
+    try {
+        const response = await fetch(`${API_BASE}/Order/GetMyOrders`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to get orders');
         }
         
-        async function getOrderById(token, orderId) {
-            const response = await fetch(`${API_BASE}/Order/GetOrderById/${orderId}`, {
-                headers: { "Authorization": `Bearer ${token}` }
-            });
-            return response.json();
+        return await response.json();
+    } catch (error) {
+        console.error('Get orders error:', error);
+        return { success: false, message: error.message };
+    }
+}
+
+async function getOrderById(token, orderId) {
+    try {
+        const response = await fetch(`${API_BASE}/Order/GetOrderById/${orderId}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to get order');
         }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Get order error:', error);
+        return { success: false, message: error.message };
+    }
+}
 
         let state = {
             token: localStorage.getItem('token'),
@@ -983,205 +1121,481 @@
         }
 
         async function loadCategories() {
-            try {
-                showLoading();
-                const categories = await getAllCategories();
-                state.categories = categories;
-                
-                categoriesContainer.innerHTML = '<button class="category-btn active" data-category-id="all">All</button>';
-                
-                categories.forEach(category => {
-                    const categoryBtn = document.createElement('button');
-                    categoryBtn.className = 'category-btn';
-                    categoryBtn.textContent = category.name;
-                    categoryBtn.dataset.categoryId = category.id;
-                    categoriesContainer.appendChild(categoryBtn);
-                });
-                
-                document.querySelectorAll('.category-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        state.selectedCategory = btn.dataset.categoryId;
-                        loadFoods();
-                    });
-                });
-            } catch (error) {
-                showAlert('Failed to load categories', 'error');
-                console.error('Error loading categories:', error);
-            } finally {
-                hideLoading();
-            }
+    try {
+        showLoading();
+        const categoriesResult = await getAllCategories();
+        
+        if (categoriesResult.success === false) {
+            throw new Error(categoriesResult.message || 'Failed to load categories');
         }
+        
+        const categories = categoriesResult;
+        state.categories = categories;
+        
+        categoriesContainer.innerHTML = '<button class="category-btn active" data-category-id="all">All</button>';
+        
+        categories.forEach(category => {
+            const categoryBtn = document.createElement('button');
+            categoryBtn.className = 'category-btn';
+            categoryBtn.textContent = category.name;
+            categoryBtn.dataset.categoryId = category.id;
+            categoriesContainer.appendChild(categoryBtn);
+        });
+        
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.selectedCategory = btn.dataset.categoryId;
+                loadFoods();
+            });
+        });
+    } catch (error) {
+        showAlert('Failed to load categories', 'error');
+        console.error('Error loading categories:', error);
+    } finally {
+        hideLoading();
+    }
+}
 
-        async function loadFoods() {
-            try {
-                showLoading();
-                const foods = await getAllFoods();
-                state.foods = foods;
-                
-                const filteredFoods = state.selectedCategory === 'all' 
-                    ? foods 
-                    : foods.filter(food => food.categoryId === parseInt(state.selectedCategory));
-                
-                foodsContainer.innerHTML = '';
-                
-                if (filteredFoods.length === 0) {
-                    foodsContainer.innerHTML = '<p>No foods found in this category.</p>';
-                    return;
-                }
-                
-                filteredFoods.forEach(food => {
-                    const foodCard = document.createElement('div');
-                    foodCard.className = 'food-card';
-                    foodCard.innerHTML = `
-                        <div class="food-img">
-                            <img src="${food.imageUrl || '/api/placeholder/250/180'}" alt="${food.name}">
-                        </div>
-                        <div class="food-details">
-                            <h3 class="food-title">${food.name}</h3>
-                            <p class="food-price">$${food.price.toFixed(2)}</p>
-                            <p class="food-description">${food.description || 'No description available'}</p>
-                            <div class="add-to-cart">
-                                <input type="number" class="quantity-input" value="1" min="1">
-                                <button class="btn-primary add-to-cart-btn" data-food-id="${food.id}">Add to Cart</button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    foodCard.querySelector('.food-img').addEventListener('click', () => {
-                        viewFoodDetail(food.id);
-                    });
-                    
-                    foodCard.querySelector('.food-title').addEventListener('click', () => {
-                        viewFoodDetail(food.id);
-                    });
-                    
-                    foodCard.querySelector('.add-to-cart-btn').addEventListener('click', (e) => {
-                        const quantity = parseInt(e.target.previousElementSibling.value);
-                        addToCart(food.id, quantity);
-                    });
-                    
-                    foodsContainer.appendChild(foodCard);
-                });
-            } catch (error) {
-                showAlert('Failed to load foods', 'error');
-                console.error('Error loading foods:', error);
-            } finally {
-                hideLoading();
-            }
+async function loadFoods() {
+    try {
+        showLoading();
+        const foodsResult = await getAllFoods();
+        
+        if (foodsResult.success === false) {
+            throw new Error(foodsResult.message || 'Failed to load foods');
         }
-
-        async function viewFoodDetail(foodId) {
-            try {
-                showLoading();
-                const food = await getFoodById(foodId);
-                state.selectedFood = food;
-                
-                foodDetailContainer.innerHTML = `
-                    <div class="food-detail-img">
-                        <img src="${food.imageUrl || '/api/placeholder/400/300'}" alt="${food.name}">
-                    </div>
-                    <div class="food-detail-content">
-                        <div class="food-detail-header">
-                            <h2 class="food-detail-title">${food.name}</h2>
-                            <div class="food-detail-price">$${food.price.toFixed(2)}</div>
-                        </div>
-                        <p class="food-detail-description">${food.description || 'No description available'}</p>
-                        <div class="add-to-basket-container">
-                            <input type="number" class="quantity-input" value="1" min="1">
-                            <button class="btn-primary" id="add-to-basket-btn">Add to Basket</button>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('add-to-basket-btn').addEventListener('click', () => {
-                    const quantity = parseInt(document.querySelector('.food-detail-content .quantity-input').value);
-                    addToCart(food.id, quantity);
-                });
-                
-                navigateTo('food-detail-page');
-            } catch (error) {
-                showAlert('Failed to load food details', 'error');
-                console.error('Error loading food details:', error);
-            } finally {
-                hideLoading();
-            }
+        
+        const foods = foodsResult;
+        state.foods = foods;
+        
+        const filteredFoods = state.selectedCategory === 'all' 
+            ? foods 
+            : foods.filter(food => food.categoryId === state.selectedCategory);
+        
+        foodsContainer.innerHTML = '';
+        
+        if (filteredFoods.length === 0) {
+            foodsContainer.innerHTML = '<p>No foods found in this category.</p>';
+            return;
         }
-
-        async function loadBasket() {
-            if (!state.token) {
-                basketContent.innerHTML = `
-                    <div class="basket-empty">
-                        <p>Please login to view your basket</p>
-                        <button class="btn-primary" id="go-to-login-from-basket">Login</button>
+        
+        filteredFoods.forEach(food => {
+            const foodCard = document.createElement('div');
+            foodCard.className = 'food-card';
+            foodCard.innerHTML = `
+                <div class="food-img">
+                    <img src="${food.photoUrl || '/api/placeholder/250/180'}" alt="${food.name}">
+                </div>
+                <div class="food-details">
+                    <h3 class="food-title">${food.name}</h3>
+                    <p class="food-price">$${food.price.toFixed(2)}</p>
+                    <p class="food-description">${food.description || 'No description available'}</p>
+                    <div class="add-to-cart">
+                        <input type="number" class="quantity-input" value="1" min="1">
+                        <button class="btn-primary add-to-cart-btn" data-food-id="${food.id}">Add to Cart</button>
                     </div>
-                `;
-                
-                document.getElementById('go-to-login-from-basket').addEventListener('click', () => {
-                    navigateTo('login-page');
-                });
-                
-                return;
+                </div>
+            `;
+            
+            foodCard.querySelector('.food-img').addEventListener('click', () => {
+                viewFoodDetail(food.id);
+            });
+            
+            foodCard.querySelector('.food-title').addEventListener('click', () => {
+                viewFoodDetail(food.id);
+            });
+            
+            foodCard.querySelector('.add-to-cart-btn').addEventListener('click', (e) => {
+                const quantity = parseInt(e.target.previousElementSibling.value);
+                addToCart(food.id, quantity);
+            });
+            
+            foodsContainer.appendChild(foodCard);
+        });
+    } catch (error) {
+        showAlert('Failed to load foods', 'error');
+        console.error('Error loading foods:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function viewFoodDetail(foodId) {
+    try {
+        showLoading();
+        const foodResult = await getFoodById(foodId);
+        
+        if (foodResult.success === false) {
+            throw new Error(foodResult.message || 'Failed to load food details');
+        }
+        
+        const food = foodResult;
+        state.selectedFood = food;
+        
+        foodDetailContainer.innerHTML = `
+            <div class="food-detail-img">
+                <img src="${food.photoUrl || '/api/placeholder/400/300'}" alt="${food.name}">
+            </div>
+            <div class="food-detail-content">
+                <div class="food-detail-header">
+                    <h2 class="food-detail-title">${food.name}</h2>
+                    <div class="food-detail-price">$${food.price.toFixed(2)}</div>
+                </div>
+                <p class="food-detail-description">${food.description || 'No description available'}</p>
+                <div class="add-to-basket-container">
+                    <input type="number" class="quantity-input" value="1" min="1">
+                    <button class="btn-primary" id="add-to-basket-btn">Add to Basket</button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('add-to-basket-btn').addEventListener('click', () => {
+            const quantity = parseInt(document.querySelector('.food-detail-content .quantity-input').value);
+            addToCart(food.id, quantity);
+        });
+        
+        navigateTo('food-detail-page');
+    } catch (error) {
+        showAlert('Failed to load food details', 'error');
+        console.error('Error loading food details:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Define a price lookup map for menu items
+const foodPrices = {
+  // Existing items from your menu
+  "02534087-e5af-4ac2-af8b-8fe7297bfe65": 5.99, // Tomato Soup
+  "0f416163-c93b-4387-a26e-7c146204da7d": 8.99, // Omelette
+  "18a5648a-7a16-4e7d-997c-4b547abef615": 12.99, // Bacon Burger
+  // Add more items as needed
+};
+
+// Default price if item not found
+const DEFAULT_PRICE = 9.99;
+
+async function loadBasket() {
+    if (!state.token) {
+        basketContent.innerHTML = `
+            <div class="basket-empty">
+                <p>Please login to view your basket</p>
+                <button class="btn-primary" id="go-to-login-from-basket">Login</button>
+            </div>
+        `;
+        
+        document.getElementById('go-to-login-from-basket').addEventListener('click', () => {
+            navigateTo('login-page');
+        });
+        
+        return;
+    }
+    
+    try {
+        showLoading();
+        const basketResult = await getUserBasket(state.token);
+        
+        // Debug output
+        console.log('Server response:', basketResult);
+        
+        // Check response structure
+        if (!basketResult || basketResult.success === false) {
+            throw new Error(basketResult?.message || 'Failed to load basket');
+        }
+        
+        // Determine correct basket structure based on server response
+        let basket;
+        if (basketResult.items) {
+            basket = basketResult;
+        } else if (basketResult.data) {
+            basket = basketResult.data;
+        } else {
+            console.error('Unexpected basket structure:', basketResult);
+            throw new Error('Invalid basket data structure');
+        }
+        
+        state.basket = basket;
+        
+        // Check if basket is empty
+        if (!basket.items || basket.items.length === 0) {
+            basketContent.innerHTML = `
+                <div class="basket-empty">
+                    <p>Your basket is empty</p>
+                    <button class="btn-primary" id="go-to-menu-from-basket">Browse Menu</button>
+                </div>
+            `;
+            
+            document.getElementById('go-to-menu-from-basket').addEventListener('click', () => {
+                navigateTo('menu-page');
+            });
+            
+            return;
+        }
+        
+        let subtotal = 0;
+        let itemsHtml = '';
+        
+        // Process basket items 
+        basket.items.forEach(item => {
+            // Get price from our price lookup table
+            let price = 0;
+            
+            if (item.foodId && foodPrices[item.foodId]) {
+                price = foodPrices[item.foodId];
+            } else {
+                price = DEFAULT_PRICE;
+                console.warn(`Price not found for food ID ${item.foodId}, using default price ${DEFAULT_PRICE}`);
             }
             
-            try {
-                showLoading();
-                const basket = await getUserBasket(state.token);
-                state.basket = basket;
-                
-                if (!basket || !basket.items || basket.items.length === 0) {
-                    basketContent.innerHTML = `
-                        <div class="basket-empty">
-                            <p>Your basket is empty</p>
-                            <button class="btn-primary" id="go-to-menu-from-basket">Browse Menu</button>
+            const quantity = item.quantity || 1;
+            const itemTotal = price * quantity;
+            subtotal += itemTotal;
+            
+            const name = item.foodName || 'Unknown Item';
+            const itemId = item.id || '';
+            
+            itemsHtml += `
+                <div class="basket-item">
+                    <div class="basket-item-details">
+                        <h3 class="basket-item-title">${name}</h3>
+                        <p class="basket-item-price">$${price.toFixed(2)}</p>
+                        <div class="basket-item-quantity">
+                            <span>Quantity: ${quantity}</span>
+                            <span class="remove-item" data-item-id="${itemId}">
+                                <i class="fas fa-trash"></i> Remove
+                            </span>
                         </div>
-                    `;
+                    </div>
+                </div>
+            `;
+        });
+        
+        const deliveryFee = 2.99;
+        const total = subtotal + deliveryFee;
+        
+        basketContent.innerHTML = `
+            <div class="basket-items">
+                ${itemsHtml}
+            </div>
+            <div class="basket-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>$${subtotal.toFixed(2)}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Delivery Fee</span>
+                    <span>$${deliveryFee.toFixed(2)}</span>
+                </div>
+                <div class="summary-row total-row">
+                    <span>Total</span>
+                    <span>$${total.toFixed(2)}</span>
+                </div>
+                <button class="checkout-btn" id="checkout-btn">Checkout</button>
+                <div class="clear-basket" id="clear-basket">Clear Basket</div>
+            </div>
+        `;
+        
+        // Add event listeners after DOM is updated
+        setTimeout(() => {
+            document.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const itemId = btn.dataset.itemId;
+                    const removeResult = await removeItemFromBasket(state.token, itemId);
                     
-                    document.getElementById('go-to-menu-from-basket').addEventListener('click', () => {
-                        navigateTo('menu-page');
-                    });
+                    if (removeResult.success) {
+                        loadBasket();
+                        showAlert('Item removed from basket');
+                    } else {
+                        showAlert(removeResult.message || 'Failed to remove item', 'error');
+                    }
+                });
+            });
+            
+            document.getElementById('checkout-btn').addEventListener('click', async () => {
+                try {
+                    showLoading();
+                    const orderResult = await placeOrderFromBasket(state.token);
                     
-                    return;
+                    if (orderResult.success === false) {
+                        throw new Error(orderResult.message || 'Failed to place order');
+                    }
+                    
+                    showAlert('Order placed successfully');
+                    loadBasket();
+                    navigateTo('orders-page');
+                } catch (error) {
+                    showAlert('Failed to place order', 'error');
+                    console.error('Error placing order:', error);
+                } finally {
+                    hideLoading();
+                }
+            });
+            
+            document.getElementById('clear-basket').addEventListener('click', async () => {
+                try {
+                    showLoading();
+                    const clearResult = await clearUserBasket(state.token);
+                    
+                    if (clearResult.success === false) {
+                        throw new Error(clearResult.message || 'Failed to clear basket');
+                    }
+                    
+                    showAlert('Basket cleared');
+                    loadBasket();
+                } catch (error) {
+                    showAlert('Failed to clear basket', 'error');
+                    console.error('Error clearing basket:', error);
+                } finally {
+                    hideLoading();
+                }
+            });
+        }, 0);
+    } catch (error) {
+        showAlert('Failed to load basket', 'error');
+        console.error('Error loading basket:', error);
+        
+        basketContent.innerHTML = `
+            <div class="basket-empty">
+                <p>Could not load your basket</p>
+                <button class="btn-primary" id="try-reload-basket">Try Again</button>
+            </div>
+        `;
+        
+        document.getElementById('try-reload-basket')?.addEventListener('click', () => {
+            loadBasket();
+        });
+    } finally {
+        hideLoading();
+    }
+}
+
+async function addToCart(foodId, quantity) {
+    if (!state.token) {
+        showAlert('Please login to add items to your basket', 'error');
+        navigateTo('login-page');
+        return;
+    }
+    
+    try {
+        showLoading();
+        const result = await addItemToBasket(state.token, foodId, quantity);
+        
+        if (result.success === false) {
+            throw new Error(result.message || 'Failed to add item to basket');
+        }
+        
+        showAlert('Item added to basket');
+    } catch (error) {
+        showAlert('Failed to add item to basket', 'error');
+        console.error('Error adding item to basket:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function loadOrders() {
+    if (!state.token) {
+        ordersContainer.innerHTML = `
+            <div class="basket-empty">
+                <p>Please login to view your orders</p>
+                <button class="btn-primary" id="go-to-login-from-orders">Login</button>
+            </div>
+        `;
+        
+        document.getElementById('go-to-login-from-orders').addEventListener('click', () => {
+            navigateTo('login-page');
+        });
+        
+        return;
+    }
+    
+    try {
+        showLoading();
+        const response = await getMyOrders(state.token);
+        
+        // Check server response
+        if (!response || response.success === false) {
+            throw new Error(response?.message || 'Failed to load orders');
+        }
+        
+        // Get data from server response
+        const orders = response.orders || response || [];
+        state.orders = orders;
+        
+        if (!orders || orders.length === 0) {
+            ordersContainer.innerHTML = `
+                <div class="basket-empty">
+                    <p>You have no orders yet</p>
+                    <button class="btn-primary" id="go-to-menu-from-orders">Browse Menu</button>
+                </div>
+            `;
+            
+            document.getElementById('go-to-menu-from-orders').addEventListener('click', () => {
+                navigateTo('menu-page');
+            });
+            
+            return;
+        }
+        
+        let ordersHtml = '';
+        
+        orders.forEach(order => {
+            let orderItemsHtml = '';
+            let orderTotal = 0;
+            let deliveryFee = 2.99; // Same delivery fee as in basket
+            
+            const items = order.items || [];
+            
+            items.forEach(item => {
+                const itemName = item.foodName || 'Unknown Item';
+                
+                // Get price from our price lookup table, same as in loadBasket
+                let itemPrice = 0;
+                if (item.foodId && foodPrices[item.foodId]) {
+                    itemPrice = foodPrices[item.foodId];
+                } else {
+                    itemPrice = DEFAULT_PRICE;
+                    console.warn(`Price not found for food ID ${item.foodId}, using default price ${DEFAULT_PRICE}`);
                 }
                 
-                let subtotal = 0;
-                let itemsHtml = '';
+                const itemQuantity = parseInt(item.quantity) || 1;
+                const itemTotal = itemPrice * itemQuantity;
+                orderTotal += itemTotal;
                 
-                basket.items.forEach(item => {
-                    const itemTotal = item.price * item.quantity;
-                    subtotal += itemTotal;
-                    
-                    itemsHtml += `
-                        <div class="basket-item">
-                            <div class="basket-item-img">
-                                <img src="${item.food.imageUrl || '/api/placeholder/80/80'}" alt="${item.food.name}">
-                            </div>
-                            <div class="basket-item-details">
-                                <h3 class="basket-item-title">${item.food.name}</h3>
-                                <p class="basket-item-price">$${item.price.toFixed(2)}</p>
-                                <div class="basket-item-quantity">
-                                    <span>Quantity: ${item.quantity}</span>
-                                    <span class="remove-item" data-item-id="${item.id}">
-                                        <i class="fas fa-trash"></i> Remove
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                const deliveryFee = 2.99;
-                const total = subtotal + deliveryFee;
-                
-                basketContent.innerHTML = `
-                    <div class="basket-items">
-                        ${itemsHtml}
+                orderItemsHtml += `
+                    <div class="order-item">
+                        <span class="order-item-name">${itemName}</span>
+                        <span class="order-item-price">$${itemPrice.toFixed(2)}</span>
+                        <span class="order-item-quantity">x${itemQuantity}</span>
+                        <span class="order-item-total">$${itemTotal.toFixed(2)}</span>
                     </div>
-                    <div class="basket-summary">
+                `;
+            });
+            
+            // Add delivery fee to total
+            const finalTotal = orderTotal + deliveryFee;
+            
+            // Format date to be more readable
+            const orderDate = new Date(order.createdAt).toLocaleString();
+            const orderId = order.id;
+            const orderStatus = order.status;
+            
+            ordersHtml += `
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-number">Order #${orderId}</div>
+                        <div class="order-date">${orderDate}</div>
+                        <div class="order-status">Status: ${orderStatus}</div>
+                    </div>
+                    <div class="order-items">
+                        ${orderItemsHtml}
+                    </div>
+                    <div class="order-summary">
                         <div class="summary-row">
                             <span>Subtotal</span>
-                            <span>$${subtotal.toFixed(2)}</span>
+                            <span>$${orderTotal.toFixed(2)}</span>
                         </div>
                         <div class="summary-row">
                             <span>Delivery Fee</span>
@@ -1189,189 +1603,68 @@
                         </div>
                         <div class="summary-row total-row">
                             <span>Total</span>
-                            <span>$${total.toFixed(2)}</span>
+                            <span>$${finalTotal.toFixed(2)}</span>
                         </div>
-                        <button class="checkout-btn" id="checkout-btn">Checkout</button>
-                        <div class="clear-basket" id="clear-basket">Clear Basket</div>
                     </div>
-                `;
-                
-                document.querySelectorAll('.remove-item').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        const itemId = btn.dataset.itemId;
-                        await removeItemFromBasket(state.token, itemId);
-                        loadBasket();
-                        showAlert('Item removed from basket');
-                    });
-                });
-                
-                document.getElementById('checkout-btn').addEventListener('click', async () => {
-                    try {
-                        showLoading();
-                        await placeOrderFromBasket(state.token);
-                        showAlert('Order placed successfully');
-                        loadBasket();
-                        navigateTo('orders-page');
-                    } catch (error) {
-                        showAlert('Failed to place order', 'error');
-                        console.error('Error placing order:', error);
-                    } finally {
-                        hideLoading();
-                    }
-                });
-                
-                document.getElementById('clear-basket').addEventListener('click', async () => {
-                    try {
-                        showLoading();
-                        await clearUserBasket(state.token);
-                        showAlert('Basket cleared');
-                        loadBasket();
-                    } catch (error) {
-                        showAlert('Failed to clear basket', 'error');
-                        console.error('Error clearing basket:', error);
-                    } finally {
-                        hideLoading();
-                    }
-                });
-            } catch (error) {
-                showAlert('Failed to load basket', 'error');
-                console.error('Error loading basket:', error);
-            } finally {
-                hideLoading();
-            }
-        }
+                </div>
+            `;
+        });
+        
+        ordersContainer.innerHTML = ordersHtml;
+    } catch (error) {
+        showAlert('Failed to load orders', 'error');
+        console.error('Error loading orders:', error);
+        
+        // Show error to user
+        ordersContainer.innerHTML = `
+            <div class="basket-empty">
+                <p>Error loading orders: ${error.message}</p>
+                <button class="btn-primary" id="retry-orders">Retry</button>
+            </div>
+        `;
+        
+        document.getElementById('retry-orders')?.addEventListener('click', () => {
+            loadOrders();
+        });
+    } finally {
+        hideLoading();
+    }
+}
 
-        async function addToCart(foodId, quantity) {
-            if (!state.token) {
-                showAlert('Please login to add items to your basket', 'error');
-                navigateTo('login-page');
-                return;
-            }
-            
-            try {
-                showLoading();
-                await addItemToBasket(state.token, foodId, quantity);
-                showAlert('Item added to basket');
-            } catch (error) {
-                showAlert('Failed to add item to basket', 'error');
-                console.error('Error adding item to basket:', error);
-            } finally {
-                hideLoading();
-            }
+async function updateQuantity(basketItemId, newQuantity) {
+    if (!state.token) {
+        showAlert('Please login to update your basket', 'error');
+        navigateTo('login-page');
+        return Promise.reject('Not authenticated');
+    }
+    
+    try {
+        showLoading();
+        const response = await fetch(`${API_BASE}/Basket/UpdateItemQuantity`, {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${state.token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ basketItemId, quantity: newQuantity })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.text();
+            throw new Error(errorData || 'Failed to update quantity');
         }
-
-        async function loadOrders() {
-            if (!state.token) {
-                ordersContainer.innerHTML = `
-                    <div class="basket-empty">
-                        <p>Please login to view your orders</p>
-                        <button class="btn-primary" id="go-to-login-from-orders">Login</button>
-                    </div>
-                `;
-                
-                document.getElementById('go-to-login-from-orders').addEventListener('click', () => {
-                    navigateTo('login-page');
-                });
-                
-                return;
-            }
-            
-            try {
-                showLoading();
-                const orders = await getMyOrders(state.token);
-                state.orders = orders;
-                
-                if (!orders || orders.length === 0) {
-                    ordersContainer.innerHTML = `
-                        <div class="basket-empty">
-                            <p>You have no orders yet</p>
-                            <button class="btn-primary" id="go-to-menu-from-orders">Browse Menu</button>
-                        </div>
-                    `;
-                    
-                    document.getElementById('go-to-menu-from-orders').addEventListener('click', () => {
-                        navigateTo('menu-page');
-                    });
-                    
-                    return;
-                }
-                
-                let ordersHtml = '';
-                
-                orders.forEach(order => {
-                    let orderItemsHtml = '';
-                    let orderTotal = 0;
-                    
-                    order.orderItems.forEach(item => {
-                        const itemTotal = item.price * item.quantity;
-                        orderTotal += itemTotal;
-                        
-                        orderItemsHtml += `
-                            <div class="order-item">
-                                <span class="order-item-name">${item.food.name}</span>
-                                <span class="order-item-quantity">x${item.quantity}</span>
-                                <span class="order-item-price">$${itemTotal.toFixed(2)}</span>
-                            </div>
-                        `;
-                    });
-                    
-                    const orderDate = new Date(order.orderDate).toLocaleString();
-                    
-                    ordersHtml += `
-                        <div class="order-card">
-                            <div class="order-header">
-                                <div class="order-number">Order #${order.id}</div>
-                                <div class="order-date">${orderDate}</div>
-                            </div>
-                            <div class="order-items">
-                                ${orderItemsHtml}
-                            </div>
-                            <div class="order-total">
-                                Total: $${orderTotal.toFixed(2)}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                ordersContainer.innerHTML = ordersHtml;
-            } catch (error) {
-                showAlert('Failed to load orders', 'error');
-                console.error('Error loading orders:', error);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        function updateQuantity(basketItemId, newQuantity) {
-            if (!state.token) {
-                showAlert('Please login to update your basket', 'error');
-                navigateTo('login-page');
-                return Promise.reject('Not authenticated');
-            }
-            
-            return fetch(`${API_BASE}/Basket/UpdateItemQuantity`, {
-                method: "PUT",
-                headers: {
-                    "Authorization": `Bearer ${state.token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ basketItemId, quantity: newQuantity })
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                }
-                throw new Error('Failed to update quantity');
-            })
-            .then(() => {
-                showAlert('Quantity updated');
-                loadBasket();
-            })
-            .catch(error => {
-                showAlert('Failed to update quantity', 'error');
-                console.error('Error updating quantity:', error);
-            });
-        }
+        
+        showAlert('Quantity updated');
+        loadBasket();
+        return { success: true };
+    } catch (error) {
+        showAlert('Failed to update quantity', 'error');
+        console.error('Error updating quantity:', error);
+        return { success: false, message: error.message };
+    } finally {
+        hideLoading();
+    }
+}
 
         function handleWindowResize() {
             const windowWidth = window.innerWidth;
@@ -1707,7 +2000,7 @@
                     showLoading();
                     const response = await login(username, password);
                     
-                    if (response.token) {
+                    if (response.success && response.token) {
                         localStorage.setItem('token', response.token);
                         localStorage.setItem('user', username);
                         state.token = response.token;
@@ -1718,7 +2011,7 @@
                         loadBasket();
                         navigateTo('menu-page');
                     } else {
-                        showAlert('Invalid credentials', 'error');
+                        showAlert(response.message || 'Invalid credentials', 'error');
                     }
                 } catch (error) {
                     showAlert('Login failed', 'error');
@@ -1727,7 +2020,7 @@
                     hideLoading();
                 }
             });
-            
+
             registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
