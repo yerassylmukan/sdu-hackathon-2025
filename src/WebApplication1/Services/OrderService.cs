@@ -82,6 +82,18 @@ public class OrderService : IOrderService
         return Result.Success();
     }
 
+    public async Task<Result<IEnumerable<OrderModel>>> GetOrdersAsync()
+    {
+        var orders = await _context.Orders
+            .Include(o => o.Items)
+            .ThenInclude(i => i.Food)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        return Result<IEnumerable<OrderModel>>.Success(orders.Select(MapToOrderModel));
+
+    }
+
     private OrderModel MapToOrderModel(Order order)
     {
         return new OrderModel

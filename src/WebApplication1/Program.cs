@@ -23,6 +23,14 @@ builder.Services.AddScoped<IFoodService, FoodService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IBasketService, BasketService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
 builder.Services.AddSignalR();
 
 builder.Services.AddControllers()
@@ -101,6 +109,8 @@ var applicationDbContext = scopedProvider.GetRequiredService<ApplicationDbContex
 await ApplicationDbContextSeed.SeedDataAsync(applicationDbContext);
 
 app.UseRouting();
+
+app.UseCors("AllowAll");
 
 app.MapHub<OrderStatusHub>("/hubs/orderStatus");
 

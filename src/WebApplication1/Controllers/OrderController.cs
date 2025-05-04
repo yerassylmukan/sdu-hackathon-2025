@@ -72,4 +72,12 @@ public class OrderController : ControllerBase
 
         return Ok();
     }
+    
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IEnumerable<OrderModel>>> GetOrders()
+    {
+        var result = await _orderService.GetOrdersAsync();
+        return Ok(result.Value);
+    }
 }
