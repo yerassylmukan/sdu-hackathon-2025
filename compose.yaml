@@ -32,3 +32,10 @@
       - POSTGRES_DB=appDatabase
     ports:
       - "5433:5432"
+
+  admin-ui:
+    build:
+      context: ./admin-ui
+      dockerfile: Dockerfile
+    ports:
+      - "5001:80"
