@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using WebApplication1.Models;
 
-public class RequestFoodModelValidator : AbstractValidator<RequestFoodModel>
+public class RequestFoodModelValidator : AbstractValidator<FoodRequestModel>
 {
     public RequestFoodModelValidator()
     {

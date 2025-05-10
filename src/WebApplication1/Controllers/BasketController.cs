@@ -31,14 +31,45 @@ public class BasketController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<BasketModel>> AddItemToBasket([FromBody] RequestBasketItemModel request)
+    public async Task<ActionResult<BasketModel>> AddItemToBasket([FromBody] BasketItemRequestModel basketItemRequest)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
         var userId = User.Identity?.Name;
         if (string.IsNullOrEmpty(userId)) return Unauthorized("User ID is missing");
 
-        var result = await _basketService.AddItemToBasketAsync(userId, request);
+        var result = await _basketService.AddItemToBasketAsync(userId, basketItemRequest);
+        if (result.IsFailure) return BadRequest(result.Error);
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetItemCount()
+    {
+        var userId = User.Identity?.Name;
+        if (string.IsNullOrEmpty(userId)) return Unauthorized("User ID is missing");
+
+        var result = await _basketService.GetItemCountAsync(userId);
+
+        if (result.IsFailure) return BadRequest(result.Error);
+
+        return Ok(result.Value);
+    }
+
+    [HttpPut("{basketItemId}")]
+    public async Task<ActionResult<BasketModel>> IncreaseItemQuantity(Guid basketItemId)
+    {
+        var result = await _basketService.IncreaseItemQuantityAsync(basketItemId);
+        if (result.IsFailure) return BadRequest(result.Error);
+
+        return Ok(result.Value);
+    }
+
+    [HttpPut("{basketItemId}")]
+    public async Task<ActionResult<BasketModel>> DecreaseItemQuantity(Guid basketItemId)
+    {
+        var result = await _basketService.DecreaseItemQuantityAsync(basketItemId);
         if (result.IsFailure) return BadRequest(result.Error);
 
         return Ok(result.Value);

@@ -19,7 +19,7 @@ public class CategoryService : ICategoryService
     public async Task<Result<IEnumerable<CategoryModel>>> GetCategoriesAsync()
     {
         var categories = await _context.Categories.Include(c => c.Foods).ToListAsync();
-        var categoryModels = categories.Select(c => MapToCategoryModel(c));
+        var categoryModels = categories.Select(MapToCategoryModel);
         return Result<IEnumerable<CategoryModel>>.Success(categoryModels);
     }
 

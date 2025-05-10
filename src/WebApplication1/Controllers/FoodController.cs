@@ -35,13 +35,35 @@ public class FoodController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetFoodsByCategory(Guid id)
+    {
+        var result = await _foodService.GetFoodsByCategoryIdAsync(id);
+
+        if (result.IsFailure) return NotFound(result.Error);
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> SearchFoods([FromQuery] string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return BadRequest("Search query is required");
+
+        var result = await _foodService.SearchFoodsAsync(query);
+
+        if (result.IsFailure) return BadRequest(result.Error);
+
+        return Ok(result.Value);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Admin", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<ActionResult<FoodModel>> CreateFood(RequestFoodModel request)
+    public async Task<ActionResult<FoodModel>> CreateFood(FoodRequestModel foodRequest)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var result = await _foodService.CreateFoodAsync(request);
+        var result = await _foodService.CreateFoodAsync(foodRequest);
         if (result.IsFailure) return BadRequest(result.Error);
 
         return Ok(result.Value);

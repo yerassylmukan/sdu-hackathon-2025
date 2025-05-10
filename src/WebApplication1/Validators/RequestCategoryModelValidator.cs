@@ -3,7 +3,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Validators;
 
-public class RequestCategoryModelValidator : AbstractValidator<RequestCategoryModel>
+public class RequestCategoryModelValidator : AbstractValidator<CategoryRequestModel>
 {
     public RequestCategoryModelValidator()
     {

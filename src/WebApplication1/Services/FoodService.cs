@@ -31,21 +31,53 @@ public class FoodService : IFoodService
         return Result<FoodModel>.Success(MapToFoodModel(food));
     }
 
-    public async Task<Result<FoodModel>> CreateFoodAsync(RequestFoodModel request)
+    public async Task<Result<IEnumerable<FoodModel>>> GetFoodsByCategoryIdAsync(Guid categoryId)
     {
-        var categoryExists = await _context.Categories.AnyAsync(c => c.Id == request.CategoryId);
+        var category = await _context.Categories
+            .Include(c => c.Foods)
+            .FirstOrDefaultAsync(c => c.Id == categoryId);
+
+        if (category == null)
+            return Result<IEnumerable<FoodModel>>.Failure("Category not found");
+
+        return Result<IEnumerable<FoodModel>>.Success(category.Foods.Select(f => new FoodModel
+        {
+            Id = f.Id,
+            Name = f.Name,
+            Description = f.Description,
+            PhotoUrl = f.PhotoUrl,
+            Price = f.Price,
+            PreparationTime = f.PreparationTime,
+            Recipe = f.Recipe,
+            CategoryId = f.CategoryId
+        }));
+    }
+
+    public async Task<Result<IEnumerable<FoodModel>>> SearchFoodsAsync(string query)
+    {
+        var loweredQuery = query.ToLower();
+        var foods = await _context.Foods
+            .Where(f => EF.Functions.Like(f.Name, $"%{loweredQuery}%"))
+            .ToListAsync();
+
+        return Result<IEnumerable<FoodModel>>.Success(foods.Select(MapToFoodModel));
+    }
+
+    public async Task<Result<FoodModel>> CreateFoodAsync(FoodRequestModel foodRequest)
+    {
+        var categoryExists = await _context.Categories.AnyAsync(c => c.Id == foodRequest.CategoryId);
         if (!categoryExists) return Result<FoodModel>.Failure("Category does not exist");
 
         var food = new Food
         {
             Id = Guid.NewGuid(),
-            Name = request.Name,
-            Description = request.Description,
-            PhotoUrl = request.PhotoUrl,
-            Price = request.Price,
-            PreparationTime = request.PreparationTime,
-            Recipe = request.Recipe,
-            CategoryId = request.CategoryId
+            Name = foodRequest.Name,
+            Description = foodRequest.Description,
+            PhotoUrl = foodRequest.PhotoUrl,
+            Price = foodRequest.Price,
+            PreparationTime = foodRequest.PreparationTime,
+            Recipe = foodRequest.Recipe,
+            CategoryId = foodRequest.CategoryId
         };
 
         _context.Foods.Add(food);

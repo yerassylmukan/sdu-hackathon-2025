@@ -3,7 +3,7 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Validators;
 
-public class RequestBasketItemModelValidator : AbstractValidator<RequestBasketItemModel>
+public class RequestBasketItemModelValidator : AbstractValidator<BasketItemRequestModel>
 {
     public RequestBasketItemModelValidator()
     {

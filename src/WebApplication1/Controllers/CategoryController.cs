@@ -37,11 +37,11 @@ public class CategoryController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<ActionResult<CategoryModel>> CreateCategory(RequestCategoryModel request)
+    public async Task<ActionResult<CategoryModel>> CreateCategory(CategoryRequestModel categoryRequest)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var result = await _categoryService.CreateCategoryAsync(request.Name);
+        var result = await _categoryService.CreateCategoryAsync(categoryRequest.Name);
         if (result.IsFailure) return BadRequest(result.Error);
 
         return Ok(result.Value);
@@ -49,11 +49,11 @@ public class CategoryController : ControllerBase
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<ActionResult<CategoryModel>> UpdateCategory(Guid id, RequestCategoryModel request)
+    public async Task<ActionResult<CategoryModel>> UpdateCategory(Guid id, CategoryRequestModel categoryRequest)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var result = await _categoryService.UpdateCategoryNameAsync(id, request.Name);
+        var result = await _categoryService.UpdateCategoryNameAsync(id, categoryRequest.Name);
         if (result.IsFailure) return BadRequest(result.Error);
 
         return Ok(result.Value);

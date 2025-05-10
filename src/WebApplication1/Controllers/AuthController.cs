@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Common.Interfaces;
@@ -49,5 +50,59 @@ public class AuthController : ControllerBase
         if (result.IsFailure) return BadRequest(result.Error);
 
         return Ok(result.Value);
+    }
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<ActionResult<string>> ChangePassword([FromBody] ChangePasswordRequestModel request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userName = User.Identity?.Name;
+        if (string.IsNullOrEmpty(userName)) return Unauthorized();
+
+        var result = await _authService.ChangePasswordAsync(userName, request.CurrentPassword, request.NewPassword);
+        if (result.IsFailure) return BadRequest(result.Error);
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<ActionResult<bool>> ChangeEmail([FromBody] ChangeEmailRequestModel request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var userName = User.Identity?.Name;
+        if (string.IsNullOrEmpty(userName)) return Unauthorized();
+
+        var result = await _authService.ChangeEmailAsync(userName, request.NewEmail);
+        if (result.IsFailure) return BadRequest(result.Error);
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("{token}")]
+    public IActionResult GetPayload(string token)
+    {
+        if (string.IsNullOrEmpty(token)) return BadRequest("Token is required.");
+
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+
+            if (!handler.CanReadToken(token)) return BadRequest("The token is not in a valid JWT format.");
+
+            var jwtToken = handler.ReadJwtToken(token);
+
+            var payload = jwtToken.Claims
+                .ToDictionary(claim => claim.Type, claim => (object)claim.Value);
+
+            return Ok(payload);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }

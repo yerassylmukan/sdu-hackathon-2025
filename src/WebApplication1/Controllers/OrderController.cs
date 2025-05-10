@@ -58,6 +58,19 @@ public class OrderController : ControllerBase
         return Ok(result.Value);
     }
 
+    [HttpPost("{orderId}")]
+    public async Task<IActionResult> CancelOrder(Guid orderId)
+    {
+        var userId = User.Identity?.Name;
+        if (string.IsNullOrEmpty(userId)) return Unauthorized("User ID is missing");
+
+        var result = await _orderService.CancelOrderAsync(orderId);
+
+        if (result.IsFailure) return BadRequest(result.Error);
+
+        return Ok();
+    }
+
     [HttpPut("{orderId}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOrderStatus(Guid orderId, [FromQuery] OrderStatus newStatus)

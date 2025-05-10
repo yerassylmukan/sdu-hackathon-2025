@@ -24,14 +24,18 @@ public class IdentityTokenClaimService : ITokenClaimService
         var user = await _userManager.FindByNameAsync(userName);
         if (user == null) return Result<string>.Failure("User not found");
         var roles = await _userManager.GetRolesAsync(user);
-        var claims = new List<Claim> { new(ClaimTypes.Name, userName) };
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id),
+            new(ClaimTypes.Name, userName)
+        };
 
         foreach (var role in roles) claims.Add(new Claim(ClaimTypes.Role, role));
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims.ToArray()),
-            Expires = DateTime.UtcNow.AddDays(7),
+            Expires = DateTime.UtcNow.AddDays(30),
             SigningCredentials =
                 new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };

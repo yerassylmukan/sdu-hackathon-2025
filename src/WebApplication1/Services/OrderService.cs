@@ -20,6 +20,7 @@ public class OrderService : IOrderService
     {
         var basket = await _context.Baskets
             .Include(b => b.Items)
+            .ThenInclude(i => i.Food)
             .FirstOrDefaultAsync(b => b.UserId == userId);
 
         if (basket == null || !basket.Items.Any())
@@ -75,12 +76,31 @@ public class OrderService : IOrderService
     {
         var order = await _context.Orders.FindAsync(orderId);
         if (order == null) return Result.Failure("Order not found");
+        
+        if (order.Status == OrderStatus.Canceled)
+            return Result.Failure("Order is canceled");
 
         order.Status = newStatus;
         await _context.SaveChangesAsync();
 
         return Result.Success();
     }
+
+    public async Task<Result> CancelOrderAsync(Guid orderId)
+    {
+        var order = await _context.Orders.FindAsync(orderId);
+        if (order == null)
+            return Result.Failure("Order not found");
+
+        if (order.Status == OrderStatus.Delivered)
+            return Result.Failure("Cannot cancel a delivered order");
+
+        order.Status = OrderStatus.Canceled;
+        await _context.SaveChangesAsync();
+
+        return Result.Success();
+    }
+
 
     public async Task<Result<IEnumerable<OrderModel>>> GetOrdersAsync()
     {

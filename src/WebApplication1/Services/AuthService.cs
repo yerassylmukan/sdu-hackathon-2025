@@ -59,4 +59,43 @@ public class AuthService : IAuthService
 
         return Result<bool>.Success(true);
     }
+
+    public async Task<Result<bool>> ChangePasswordAsync(string userName, string currentPassword, string newPassword)
+    {
+        var user = await _userManager.FindByNameAsync(userName);
+        if (user == null) return Result<bool>.Failure("User not found.");
+
+        var changePasswordResult = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        if (!changePasswordResult.Succeeded)
+            return Result<bool>.Failure("Failed to change password: " +
+                                        string.Join("; ", changePasswordResult.Errors.Select(e => e.Description)));
+
+        return Result<bool>.Success(true);
+    }
+
+    public async Task<Result<string>> ChangeEmailAsync(string userName, string newEmail)
+    {
+        var user = await _userManager.FindByNameAsync(userName);
+        if (user == null) return Result<string>.Failure("User not found.");
+
+        var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+        var changeEmailResult = await _userManager.ChangeEmailAsync(user, newEmail, token);
+
+        if (!changeEmailResult.Succeeded)
+            return Result<string>.Failure("Failed to change email: " +
+                                          string.Join("; ", changeEmailResult.Errors.Select(e => e.Description)));
+
+        user.UserName = newEmail;
+        var updateUsernameResult = await _userManager.UpdateAsync(user);
+
+        if (!updateUsernameResult.Succeeded)
+            return Result<string>.Failure("Email updated, but failed to update username: " +
+                                          string.Join("; ", updateUsernameResult.Errors.Select(e => e.Description)));
+
+        var jwtToken = await _tokenClaimService.GetTokenAsync(newEmail);
+
+        return jwtToken.IsFailure
+            ? Result<string>.Failure("Failed to change password.")
+            : Result<string>.Success(jwtToken.Value!);
+    }
 }

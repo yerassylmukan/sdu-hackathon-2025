@@ -33,9 +33,9 @@ public class BasketService : IBasketService
         return Result<BasketModel>.Success(MapToBasketModel(basket));
     }
 
-    public async Task<Result<BasketModel>> AddItemToBasketAsync(string userId, RequestBasketItemModel request)
+    public async Task<Result<BasketModel>> AddItemToBasketAsync(string userId, BasketItemRequestModel basketItemRequest)
     {
-        var food = await _context.Foods.FindAsync(request.FoodId);
+        var food = await _context.Foods.FindAsync(basketItemRequest.FoodId);
         if (food == null)
             return Result<BasketModel>.Failure("Food not found");
 
@@ -59,13 +59,14 @@ public class BasketService : IBasketService
 
             trackedBasket.Items = await _context.BasketItems
                 .Where(i => i.BasketId == trackedBasket.Id)
+                .Include(i => i.Food)
                 .ToListAsync();
         }
 
-        var existingItem = trackedBasket.Items.FirstOrDefault(i => i.FoodId == request.FoodId);
+        var existingItem = trackedBasket.Items.FirstOrDefault(i => i.FoodId == basketItemRequest.FoodId);
         if (existingItem != null)
         {
-            existingItem.Quantity += request.Quantity;
+            existingItem.Quantity += basketItemRequest.Quantity;
             _context.BasketItems.Update(existingItem);
         }
         else
@@ -74,8 +75,8 @@ public class BasketService : IBasketService
             {
                 Id = Guid.NewGuid(),
                 BasketId = trackedBasket.Id,
-                FoodId = request.FoodId,
-                Quantity = request.Quantity
+                FoodId = basketItemRequest.FoodId,
+                Quantity = basketItemRequest.Quantity
             };
             trackedBasket.Items.Add(newItem);
             _context.BasketItems.Add(newItem);
@@ -86,6 +87,64 @@ public class BasketService : IBasketService
         return Result<BasketModel>.Success(MapToBasketModel(trackedBasket));
     }
 
+    public async Task<Result<int>> GetItemCountAsync(string userId)
+    {
+        var basket = await _context.Baskets
+            .Include(b => b.Items)
+            .FirstOrDefaultAsync(b => b.UserId == userId);
+
+        if (basket == null)
+            return Result<int>.Success(0);
+
+        var totalQuantity = basket.Items.Sum(i => i.Quantity);
+        return Result<int>.Success(totalQuantity);
+    }
+
+    public async Task<Result<BasketModel>> IncreaseItemQuantityAsync(Guid basketItemId)
+    {
+        var item = await _context.BasketItems
+            .Include(i => i.Food)
+            .Include(i => i.Basket)
+            .ThenInclude(b => b.Items)
+            .ThenInclude(i => i.Food)
+            .FirstOrDefaultAsync(i => i.Id == basketItemId);
+
+        if (item == null)
+            return Result<BasketModel>.Failure("Basket item not found");
+
+        item.Quantity++;
+        _context.BasketItems.Update(item);
+        await _context.SaveChangesAsync();
+
+        return Result<BasketModel>.Success(MapToBasketModel(item.Basket));
+    }
+
+    public async Task<Result<BasketModel>> DecreaseItemQuantityAsync(Guid basketItemId)
+    {
+        var item = await _context.BasketItems
+            .Include(i => i.Food)
+            .Include(i => i.Basket)
+            .ThenInclude(b => b.Items)
+            .ThenInclude(i => i.Food)
+            .FirstOrDefaultAsync(i => i.Id == basketItemId);
+
+        if (item == null)
+            return Result<BasketModel>.Failure("Basket item not found");
+
+        if (item.Quantity > 1)
+        {
+            item.Quantity--;
+            _context.BasketItems.Update(item);
+        }
+        else
+        {
+            _context.BasketItems.Remove(item);
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Result<BasketModel>.Success(MapToBasketModel(item.Basket));
+    }
 
     public async Task<Result> RemoveItemFromBasketAsync(Guid basketItemId)
     {
@@ -124,7 +183,7 @@ public class BasketService : IBasketService
             {
                 Id = i.Id,
                 FoodId = i.FoodId,
-                FoodName = i.Food?.Name ?? "Unknown",
+                FoodName = i.Food.Name,
                 Quantity = i.Quantity
             }).ToList()
         };

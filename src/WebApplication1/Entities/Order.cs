@@ -14,5 +14,6 @@ public enum OrderStatus
 {
     Preparing,
     Delivering,
-    Delivered
+    Delivered,
+    Canceled
 }
